@@ -9,6 +9,7 @@ import { setupWebSocket } from './websocket/seatStatus.js';
 import authRoutes from './routes/auth.js';
 import showRoutes from './routes/shows.js';
 import holdRoutes from './routes/holds.js';
+import movieRoutes from './routes/movies.js';
 import seatHoldService from './services/SeatHoldService.js';
 import sessionManager from './services/SessionManager.js';
 import logger from './utils/logger.js';
@@ -31,6 +32,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/shows', showRoutes);
 app.use('/api/holds', holdRoutes);
+app.use('/api/movies', movieRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

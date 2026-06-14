@@ -1,172 +1,257 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import URLInput from '../components/URLInput';
-import { showsAPI } from '../api/client';
-import { Zap, Shield, Clock, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import MovieCard from '../components/MovieCard';
+import { moviesAPI } from '../api/client';
+import { Search, MapPin, ChevronDown, Film, TrendingUp, Sparkles, Loader2 } from 'lucide-react';
 
 export default function Home() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [movies, setMovies] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [selectedCity, setSelectedCity] = useState('mumbai');
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+  const [featuredMovie, setFeaturedMovie] = useState(null);
 
-  const handleUrlSubmit = async (url) => {
-    setLoading(true);
-    setError('');
+  // Fetch cities and movies on mount
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const [moviesRes, citiesRes] = await Promise.all([
+          moviesAPI.nowPlaying(),
+          moviesAPI.getCities(),
+        ]);
+        const movieList = moviesRes.data.movies || [];
+        setMovies(movieList);
+        setCities(citiesRes.data.cities || []);
 
-    try {
-      const { data } = await showsAPI.parse(url);
-      // Navigate to show page with parsed data
-      navigate('/show', { state: { url, show: data.show, seatLayout: data.seatLayout, availableSeats: data.availableSeats } });
-    } catch (err) {
-      // If parse fails, use demo data for development
-      const demoShow = {
-        movieName: 'Dhurandhar 2',
-        venue: 'Nexus Vijaya Mall, Chennai',
-        showDate: '7 June 2026',
-        showTime: '2:00 PM',
-        language: 'Hindi',
-        format: '2D',
-        url,
-      };
-      const demoLayout = generateDemoLayout();
-      navigate('/show', { state: { url, show: demoShow, seatLayout: demoLayout, availableSeats: [], demo: true } });
-    } finally {
-      setLoading(false);
+        // Pick a random featured movie with a backdrop
+        const withBackdrop = movieList.filter((m) => m.backdropUrl);
+        if (withBackdrop.length > 0) {
+          setFeaturedMovie(withBackdrop[Math.floor(Math.random() * withBackdrop.length)]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch movies:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
+  }, []);
+
+  // Debounced search
+  useEffect(() => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+      setSearchResults(null);
+      return;
     }
+
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const { data } = await moviesAPI.search(searchQuery.trim());
+        setSearchResults(data.movies || []);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleMovieClick = (movie) => {
+    navigate(`/movie/${movie.id}`);
   };
 
-  const features = [
-    {
-      icon: Zap,
-      title: 'Instant Hold',
-      desc: 'Select seats and hold them instantly with our automation engine.',
-      color: 'var(--accent-cyan)',
-    },
-    {
-      icon: Clock,
-      title: '2-Hour Window',
-      desc: 'Seats stay reserved for up to 2 hours while you decide.',
-      color: 'var(--accent-amber)',
-    },
-    {
-      icon: Shield,
-      title: 'Auto Re-Select',
-      desc: 'If seats get deselected, we automatically re-select them for you.',
-      color: 'var(--accent-green)',
-    },
-    {
-      icon: Sparkles,
-      title: 'Real-Time Updates',
-      desc: 'Live status updates via WebSocket so you always know your hold status.',
-      color: 'var(--accent-purple)',
-    },
-  ];
+  const displayMovies = searchResults !== null ? searchResults : movies;
+  const currentCity = cities.find((c) => c.id === selectedCity);
 
   return (
     <div className="container">
-      {/* Hero */}
-      <div className="hero">
-        <motion.h1
-          className="hero-title"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+      {/* Featured Hero */}
+      {featuredMovie && !searchResults && (
+        <motion.div
+          className="movie-hero"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
         >
-          Hold Your Movie Seats{' '}
-          <span className="text-gradient">Before Anyone Else</span>
-        </motion.h1>
-
-        <motion.p
-          className="hero-subtitle"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-        >
-          Paste a BookMyShow URL, pick your seats, and we'll hold them for you for up to 2 hours.
-          No more losing seats while you coordinate with friends.
-        </motion.p>
-
-        <URLInput onSubmit={handleUrlSubmit} loading={loading} />
-      </div>
-
-      {/* Features Grid */}
-      <motion.div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: 'var(--space-lg)',
-          marginTop: 'var(--space-2xl)',
-          marginBottom: 'var(--space-3xl)',
-        }}
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: { opacity: 0 },
-          visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.5 } },
-        }}
-      >
-        {features.map((f, i) => (
-          <motion.div
-            key={i}
-            className="glass-card"
-            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-            whileHover={{ y: -4, borderColor: f.color }}
-            style={{ padding: 'var(--space-lg)', cursor: 'default', transition: 'border-color 0.3s' }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 'var(--radius-md)',
-                background: `${f.color}15`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 'var(--space-md)',
-              }}
+          <div className="movie-hero-backdrop">
+            <img src={featuredMovie.backdropUrl} alt="" />
+            <div className="movie-hero-gradient" />
+          </div>
+          <div className="movie-hero-content">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
             >
-              <f.icon size={24} style={{ color: f.color }} />
-            </div>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6 }}>{f.title}</h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              {f.desc}
-            </p>
-          </motion.div>
-        ))}
+              <span className="movie-hero-badge">
+                <TrendingUp size={14} />
+                Now Showing
+              </span>
+              <h1 className="movie-hero-title">{featuredMovie.title}</h1>
+              <p className="movie-hero-overview">
+                {featuredMovie.overview?.slice(0, 160)}
+                {featuredMovie.overview?.length > 160 ? '...' : ''}
+              </p>
+              <motion.button
+                className="btn btn-primary btn-lg"
+                onClick={() => handleMovieClick(featuredMovie)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                id="hero-book-btn"
+              >
+                <Film size={18} />
+                Book Tickets
+              </motion.button>
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Controls Bar */}
+      <motion.div
+        className="movies-controls"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        {/* City Selector */}
+        <div className="city-selector" id="city-selector">
+          <button
+            className="city-selector-btn"
+            onClick={() => setCityDropdownOpen(!cityDropdownOpen)}
+          >
+            <MapPin size={16} />
+            <span>{currentCity?.name || 'Select City'}</span>
+            <ChevronDown size={14} className={cityDropdownOpen ? 'rotate-180' : ''} />
+          </button>
+
+          <AnimatePresence>
+            {cityDropdownOpen && (
+              <motion.div
+                className="city-dropdown"
+                initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+              >
+                {cities.map((city) => (
+                  <button
+                    key={city.id}
+                    className={`city-dropdown-item ${city.id === selectedCity ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedCity(city.id);
+                      setCityDropdownOpen(false);
+                    }}
+                  >
+                    <span>{city.name}</span>
+                    <span className="city-venue-count">{city.venueCount} cinemas</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Search */}
+        <div className="movies-search" id="movies-search">
+          <Search size={18} className="movies-search-icon" />
+          <input
+            type="text"
+            className="movies-search-input"
+            placeholder="Search movies..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searching && (
+            <Loader2 size={16} className="movies-search-spinner" />
+          )}
+        </div>
       </motion.div>
+
+      {/* Section Header */}
+      <motion.div
+        className="movies-section-header"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        <h2>
+          {searchResults !== null ? (
+            <>
+              <Search size={20} />
+              Results for "{searchQuery}"
+            </>
+          ) : (
+            <>
+              <Sparkles size={20} />
+              Now Showing in {currentCity?.name || 'India'}
+            </>
+          )}
+        </h2>
+        {searchResults !== null && (
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              setSearchQuery('');
+              setSearchResults(null);
+            }}
+          >
+            Clear search
+          </button>
+        )}
+      </motion.div>
+
+      {/* Movie Grid */}
+      {loading ? (
+        <div className="movie-grid">
+          {Array.from({ length: 8 }, (_, i) => (
+            <div key={i} className="movie-card-skeleton">
+              <div className="skeleton" style={{ aspectRatio: '2/3', borderRadius: 'var(--radius-md)' }} />
+              <div className="skeleton" style={{ height: 18, width: '80%', marginTop: 12, borderRadius: 6 }} />
+              <div className="skeleton" style={{ height: 14, width: '50%', marginTop: 8, borderRadius: 6 }} />
+            </div>
+          ))}
+        </div>
+      ) : displayMovies.length > 0 ? (
+        <motion.div
+          className="movie-grid"
+          key={searchResults ? 'search' : 'all'}
+        >
+          {displayMovies.map((movie, i) => (
+            <MovieCard
+              key={movie.id}
+              movie={movie}
+              onClick={handleMovieClick}
+              index={i}
+            />
+          ))}
+        </motion.div>
+      ) : (
+        <motion.div
+          className="empty-state"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="empty-state-icon">🎭</div>
+          <h3 className="empty-state-title">
+            {searchResults !== null ? 'No movies found' : 'No movies showing right now'}
+          </h3>
+          <p className="empty-state-text">
+            {searchResults !== null
+              ? `Try a different search term`
+              : 'Check back later for new releases'}
+          </p>
+        </motion.div>
+      )}
     </div>
   );
-}
-
-/**
- * Generate a demo seat layout for development
- */
-function generateDemoLayout() {
-  const categories = [
-    { name: 'PLATINUM RECLINER', price: '₹400', rows: ['A', 'B'], seatsPerRow: 10, aisles: [4, 7] },
-    { name: 'GOLD', price: '₹280', rows: ['C', 'D', 'E', 'F', 'G'], seatsPerRow: 16, aisles: [4, 13] },
-    { name: 'SILVER', price: '₹150', rows: ['H', 'I', 'J', 'K', 'L', 'M'], seatsPerRow: 20, aisles: [5, 16] },
-  ];
-
-  return categories.map((cat) => ({
-    name: cat.name,
-    price: cat.price,
-    rows: cat.rows.map((rowLabel) => ({
-      label: rowLabel,
-      seats: Array.from({ length: cat.seatsPerRow }, (_, i) => {
-        const colNum = i + 1;
-        const isAisle = cat.aisles.includes(colNum);
-        const isBooked = !isAisle && Math.random() < 0.15;
-        return {
-          id: `${rowLabel}${colNum}`,
-          label: `${colNum}`,
-          row: rowLabel,
-          available: !isBooked && !isAisle,
-          isAisle,
-          booked: isBooked,
-        };
-      }),
-    })),
-  }));
 }

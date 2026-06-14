@@ -191,57 +191,10 @@ class ShowParserService {
   }
 
   /**
-   * Generate a realistic demo seat layout for development/demo
+   * @deprecated Use venueService.generateSeatLayout() instead.
    */
   generateDemoLayout() {
-    const categories = [
-      {
-        name: 'PLATINUM RECLINER',
-        price: '₹400',
-        rows: ['A', 'B'],
-        seatsPerRow: 10,
-        startCol: 1,
-        aisles: [4, 7],
-      },
-      {
-        name: 'GOLD',
-        price: '₹280',
-        rows: ['C', 'D', 'E', 'F', 'G'],
-        seatsPerRow: 16,
-        startCol: 1,
-        aisles: [4, 13],
-      },
-      {
-        name: 'SILVER',
-        price: '₹150',
-        rows: ['H', 'I', 'J', 'K', 'L', 'M'],
-        seatsPerRow: 20,
-        startCol: 1,
-        aisles: [5, 16],
-      },
-    ];
-
-    return categories.map((cat) => ({
-      name: cat.name,
-      price: cat.price,
-      rows: cat.rows.map((rowLabel) => ({
-        label: rowLabel,
-        seats: Array.from({ length: cat.seatsPerRow }, (_, i) => {
-          const colNum = cat.startCol + i;
-          const isAisle = cat.aisles.includes(colNum);
-          // Randomly mark ~15% as booked for realism
-          const isBooked = Math.random() < 0.15;
-          return {
-            id: `${rowLabel}${colNum}`,
-            label: `${colNum}`,
-            row: rowLabel,
-            available: !isBooked && !isAisle,
-            isAisle,
-            booked: isBooked,
-          };
-        }),
-      })),
-    }));
+    return null;
   }
 
   isValidUrl(url) {

@@ -45,6 +45,17 @@ export const showsAPI = {
   getSeats: (url) => api.get(API_ENDPOINTS.SHOWS.SEATS, { params: { url } }),
 };
 
+// --- Movies ---
+export const moviesAPI = {
+  nowPlaying: (page = 1) => api.get(API_ENDPOINTS.MOVIES.NOW_PLAYING, { params: { page } }),
+  search: (q, page = 1) => api.get(API_ENDPOINTS.MOVIES.SEARCH, { params: { q, page } }),
+  getMovie: (id) => api.get(API_ENDPOINTS.MOVIES.DETAIL(id)),
+  getVenues: (id, city, date) => api.get(API_ENDPOINTS.MOVIES.VENUES(id), { params: { city, date } }),
+  getSeats: (id, venueId, showtimeId) => api.get(API_ENDPOINTS.MOVIES.SEATS(id), { params: { venueId, showtimeId } }),
+  getCities: () => api.get(API_ENDPOINTS.MOVIES.CITIES),
+  getDates: () => api.get(API_ENDPOINTS.MOVIES.DATES),
+};
+
 // --- Holds ---
 export const holdsAPI = {
   create: (data) => api.post(API_ENDPOINTS.HOLDS.BASE, data),

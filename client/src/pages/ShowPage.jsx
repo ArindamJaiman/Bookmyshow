@@ -14,7 +14,7 @@ export default function ShowPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const { url, show, seatLayout, availableSeats, demo } = location.state || {};
+  const { url, show, seatLayout, availableSeats, venueId, showtimeId, movieId } = location.state || {};
 
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [holdActive, setHoldActive] = useState(false);
@@ -69,20 +69,6 @@ export default function ShowPage() {
     } catch (err) {
       const msg = err.response?.data?.error || 'Failed to create hold. Please try again.';
       setError(msg);
-
-      // If demo mode, simulate a hold for UI demonstration
-      if (demo) {
-        setHoldData({
-          id: 'demo-' + Date.now(),
-          movie_name: show.movieName,
-          venue: show.venue,
-          seats: selectedSeats,
-          hold_expiry: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-          status: 'holding',
-        });
-        setHoldActive(true);
-        setError('');
-      }
     } finally {
       setLoading(false);
     }
@@ -95,7 +81,7 @@ export default function ShowPage() {
       await holdsAPI.confirm(holdData.id);
       navigate('/dashboard');
     } catch {
-      // In demo mode, just navigate
+      // Navigate anyway to see the hold
       navigate('/dashboard');
     } finally {
       setLoading(false);
@@ -137,26 +123,6 @@ export default function ShowPage() {
         <ArrowLeft size={16} />
         Back to Home
       </motion.button>
-
-      {/* Demo banner */}
-      {demo && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            padding: 'var(--space-sm) var(--space-md)',
-            background: 'var(--accent-amber-dim)',
-            border: '1px solid rgba(255, 171, 0, 0.3)',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: 'var(--space-lg)',
-            fontSize: '0.85rem',
-            color: 'var(--accent-amber)',
-            textAlign: 'center',
-          }}
-        >
-          🎭 Demo Mode — Using generated seat layout. Connect to Supabase for full functionality.
-        </motion.div>
-      )}
 
       {/* Show Details */}
       <ShowDetails show={show} seatCount={seatCount} />

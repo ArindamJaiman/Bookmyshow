@@ -2,6 +2,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Layout from './components/Layout';
 import Home from './pages/Home';
+import MoviePage from './pages/MoviePage';
 import ShowPage from './pages/ShowPage';
 import Dashboard from './pages/Dashboard';
 
@@ -32,6 +33,14 @@ export default function App() {
             element={
               <AnimatedPage>
                 <Home />
+              </AnimatedPage>
+            }
+          />
+          <Route
+            path="/movie/:id"
+            element={
+              <AnimatedPage>
+                <MoviePage />
               </AnimatedPage>
             }
           />

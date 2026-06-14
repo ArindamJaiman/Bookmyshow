@@ -13,6 +13,9 @@ export const config = {
   // Session
   sessionSecret: process.env.SESSION_SECRET || 'dev-secret-change-me',
 
+  // TMDB
+  tmdbApiKey: process.env.TMDB_API_KEY || '',
+
   // BookMyShow automation
   userAgent:
     process.env.BOOKMYSHOW_USER_AGENT ||
