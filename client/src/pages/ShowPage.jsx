@@ -7,7 +7,8 @@ import HoldTimer from '../components/HoldTimer';
 import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../hooks/useAuth';
 import { holdsAPI } from '../api/client';
-import { Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import { Lock, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
+import { findBestSeats } from '../utils/seatAlgorithm';
 
 export default function ShowPage() {
   const location = useLocation();
@@ -22,6 +23,7 @@ export default function ShowPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
 
   // Redirect if no show data
   if (!show) {
@@ -109,6 +111,28 @@ export default function ShowPage() {
     0
   ) || 0;
 
+  const handleFindBestSeats = () => {
+    if (holdActive || isScanning) return;
+    
+    // Determine how many seats to look for (default 2, or current selection count)
+    const numToFind = selectedSeats.length > 0 ? selectedSeats.length : 2;
+    
+    setIsScanning(true);
+    setSelectedSeats([]); // clear current selection
+    
+    // Simulate AI thinking time
+    setTimeout(() => {
+      // Pass the layout and the number of seats to the algorithm
+      const best = findBestSeats(seatLayout, numToFind);
+      if (best.length > 0) {
+        setSelectedSeats(best);
+      } else {
+        setError('No optimal contiguous seats found.');
+      }
+      setIsScanning(false);
+    }, 1500);
+  };
+
   return (
     <div className="container">
       {/* Back button */}
@@ -184,15 +208,41 @@ export default function ShowPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 'var(--space-lg)', textAlign: 'center' }}>
-            Select Your Seats
-          </h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)', flexWrap: 'wrap', gap: 16 }}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
+              Select Your Seats
+            </h2>
+            
+            {!holdActive && (
+              <motion.button
+                className="btn btn-magic btn-sm"
+                onClick={handleFindBestSeats}
+                disabled={isScanning || seatCount === 0}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                id="btn-ai-seats"
+              >
+                {isScanning ? (
+                  <>
+                    <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                    Scanning...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={14} />
+                    Find Best Seats
+                  </>
+                )}
+              </motion.button>
+            )}
+          </div>
 
           <SeatMap
             layout={seatLayout}
             selectedSeats={selectedSeats}
             onSeatToggle={handleSeatToggle}
-            disabled={holdActive}
+            disabled={holdActive || isScanning}
+            isScanning={isScanning}
           />
         </motion.div>
 

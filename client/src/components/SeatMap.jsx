@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SeatLegend from './SeatLegend';
 import { MAX_SEATS } from '../utils/constants';
 
-export default function SeatMap({ layout, selectedSeats, onSeatToggle, heldSeats = [], disabled = false }) {
+export default function SeatMap({ layout, selectedSeats, onSeatToggle, heldSeats = [], disabled = false, isScanning = false }) {
   // Build a set of held seat IDs for quick lookup
   const heldSet = useMemo(() => new Set(heldSeats), [heldSeats]);
   const selectedSet = useMemo(() => new Set(selectedSeats), [selectedSeats]);
@@ -72,7 +72,8 @@ export default function SeatMap({ layout, selectedSeats, onSeatToggle, heldSeats
       </div>
 
       {/* Seat Sections */}
-      <div className="seat-map-container">
+      <div className="seat-map-container" style={{ position: 'relative' }}>
+        {isScanning && <div className="scanning-overlay" />}
         {layout.map((section, sIdx) => (
           <motion.div
             key={section.name}

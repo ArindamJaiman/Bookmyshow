@@ -307,6 +307,51 @@ a:hover {
   font-size: 1rem;
 }
 
+.btn-magic {
+  background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+}
+
+.btn-magic:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(255, 215, 0, 0.4);
+}
+
+.btn-magic:active {
+  transform: translateY(0);
+}
+
+.btn-magic svg {
+  animation: magicSparkle 2s ease-in-out infinite;
+}
+
+@keyframes magicSparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(1.2) rotate(15deg); opacity: 0.8; }
+}
+
+.scanning-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, 
+    transparent 0%, 
+    rgba(0, 229, 255, 0.2) 50%, 
+    transparent 100%);
+  animation: scanSweep 1.5s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes scanSweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
